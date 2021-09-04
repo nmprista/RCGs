@@ -9,25 +9,31 @@
 # Proper testing is need
 # Proper link references are need btweeen 
 
+# 2021-09-24: Nuno Prista
+				#fixing of rajidae and sparidae [making use of worms family]; 
+				#fixing of some other groups [substring is safer choice to filter partially TAXOCODE than %like%]
+
 ################################################################################
 # Remember to run "01_table_1a_linkage_table_correcting_latinName.R" before this script
 ################################################################################
 
-
+rm(list=ls())
 library(dplyr)
 library(data.table)
 # library(tidyr)
 # library(stringr)
 
-path <- "Q:/mynd/RCM/RCGs/NWPtools/table_2_1/"
+path <- ""
 
 rfmo_to_test <- c("ICES", "NAFO")
 
-linkage <- read.csv(file.path(path, 'EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC.csv'), sep = ";", header = T)
+#linkage <- read.csv(file.path(path, 'EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC_out1.csv'), sep = ";", header = T)
+linkage <- read.csv('Nuno/EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC_out1.csv', sep = ";", header = T)
 
-rdb_spp <- read.csv(paste(path, "rdb_spp.csv", sep = "/"), sep = ";")
+#rdb_spp <- read.csv(paste(path, "rdb_spp.csv", sep = "/"), sep = ";")
+rdb_spp <- read.csv("rdb_spp.csv", sep = ";")
 
-ASFIS   <- read.csv(paste0(path,'ASFIS_sp_2020.csv'), header=TRUE, sep=";")
+ASFIS   <- read.csv(paste0(path,'ASFIS_sp_2020.csv'), header=TRUE, sep=";",stringsAsFactors=FALSE)
 
 linkage$latinNameASFIS <- gsub("spp.", "spp", linkage$latinName)
 
@@ -49,7 +55,7 @@ na_TAXO_rdb_spp <- subset(rdb_spp, is.na(TAXOCODE))
 
 link_spp <- distinct(subset(linkage, RFMO %in% rfmo_to_test), sppName, latinName)
 
-link_rdb_spp <- subset(full_join(link_spp, rdb_spp, by = c("latinName" = "Species"), keep = T), is.na(Species))
+#link_rdb_spp <- subset(full_join(link_spp, rdb_spp, by = c("latinName" = "Species"), keep = T), is.na(Species))
 
 
 # Adding RDB species ----
@@ -90,35 +96,36 @@ ASFIS$TAXOCODE[ASFIS$Scientific_name %like% "Anarhichas"]
 ## North Sea and Eastern Arctic, ICES ----
 
 spp <- "Mustelus spp"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "10804007"],
-          rdb_spp$Species[rdb_spp$TAXOCODE %like% "10804007"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 8) %like% "10804007"],
+          rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 8) %like% "10804007"]))
 linkage$latinNameJoin[linkage$region == "North Sea and Eastern Arctic" &
                         linkage$RFMO == "ICES" &
                         linkage$latinNameJoin == spp] <-
   paste(spp, paste(spps, collapse = ","), sep = ",")
 
 spp <- "Ammodytidae"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "17204"],
-           rdb_spp$Species[rdb_spp$TAXOCODE %like% "17204"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 5) %like% "17204"],
+           rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 5) %like% "17204"]))
 linkage$latinNameJoin[linkage$region == "North Sea and Eastern Arctic" &
                         linkage$RFMO == "ICES" &
                         linkage$latinNameJoin == spp] <-
   paste(spp, paste(spps, collapse = ","), sep = ",")
     
 spp <- "Anarhichas spp"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "17102001"],
-                  rdb_spp$Species[rdb_spp$TAXOCODE %like% "17102001"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 8) %like% "17102001"],
+                  rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 8) %like% "17102001"]))
 linkage$latinNameJoin[linkage$region == "North Sea and Eastern Arctic" &
                         linkage$RFMO == "ICES" & linkage$latinNameJoin == spp] <-
   paste(spp, paste(spps, collapse = ","), sep = ",")
 
-spp <- "Rajidae"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "11004"],
-                rdb_spp$Species[rdb_spp$TAXOCODE %like% "11004"],
-                rdb_spp$Species[rdb_spp$SpeciesDesc %like% "ray" | rdb_spp$SpeciesDesc %like% "skate"]))
 
-spp_there <- subset(linkage, TAXOCODE %like% "11004" | sppName %like% "ray" | sppName %like% "skate")
-spp_there_1 <- subset(spp_there, region == "North Sea and Eastern Arctic" & RFMO == "ICES" & latinName != spp)
+spp <- "Rajidae"
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 5) %like% "11004"],
+                rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 5) %like% "11004"],
+                rdb_spp$Species[rdb_spp$Family %in% "Rajidae"]))
+
+spp_there <- subset(linkage, substr(TAXOCODE, 1, 5) %like% "11004" | sppName %like% "ray" | sppName %like% "skate")
+spp_there_1 <- subset(spp_there, region == "North Sea and Eastern Arctic" & RFMO == "ICES" & !latinName %in% c("Rajidae","Dasyatis pastinaca"))
 spps_1 <- spps[-which(spps %in% spp_there_1$latinNameJoin)] 
 
 linkage$latinNameJoin[linkage$region == "North Sea and Eastern Arctic" &
@@ -142,8 +149,8 @@ linkage$latinNameJoin[linkage$region == "North Sea and Eastern Arctic" &
 ASFIS$TAXOCODE[ASFIS$Scientific_name %like% "Trisopterus"]
 
 spp <- "Ammodytidae"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "17204"],
-                  rdb_spp$Species[rdb_spp$TAXOCODE %like% "17204"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 5) %like% "17204"],
+           rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 5) %like% "17204"]))
 linkage$latinNameJoin[linkage$region == "North-East Atlantic" &
                         linkage$RFMO == "ICES" &
                         linkage$latinNameJoin == spp] <-
@@ -166,8 +173,8 @@ linkage$latinNameJoin[linkage$region == "North-East Atlantic" &
   paste(spp, paste(spps, collapse = ","), sep = ",")
 
 spp <- "Centrophorus spp"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "10901008"],
-                  rdb_spp$Species[rdb_spp$TAXOCODE %like% "10901008"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 8) %like% "10901008"],
+                  rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 8) %like% "10901008"]))
 linkage$latinNameJoin[linkage$region == "North-East Atlantic" &
                         linkage$RFMO == "ICES" &
                         linkage$latinNameJoin == spp] <-
@@ -194,8 +201,9 @@ linkage$latinNameJoin[linkage$region == "North-East Atlantic" &
   paste(spp, paste(spps_1, collapse = ","), sep = ",")
 
 spp <- "Sparidae"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "17039"],
-                 rdb_spp$Species[rdb_spp$TAXOCODE %like% "17039"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 5) %like% "17039"],
+                 rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 5) %like% "17039"]),
+				  rdb_spp$Species[rdb_spp$Family %in% "Sparidae"])
 
 spp_there <- subset(linkage, TAXOCODE %like% "17039")
 spp_there_1 <- subset(spp_there, region == "North-East Atlantic" & RFMO == "ICES" & latinName != spp)
@@ -234,8 +242,8 @@ linkage$latinNameJoin[linkage$region == "Other regions" &
   paste(spp, paste(spps, collapse = ","), sep = ",")
 
 spp <- "Centrophorus spp"
-spps <- unique(c(ASFIS$Scientific_name[ASFIS$TAXOCODE %like% "10901008"],
-                 rdb_spp$Species[rdb_spp$TAXOCODE %like% "10901008"]))
+spps <- unique(c(ASFIS$Scientific_name[substr(ASFIS$TAXOCODE, 1, 8) %like% "10901008"],
+                 rdb_spp$Species[substr(rdb_spp$TAXOCODE, 1, 8) %like% "10901008"]))
 linkage$latinNameJoin[linkage$region == "Other regions" &
                         linkage$RFMO == "NAFO" &
                         linkage$latinNameJoin == spp] <-
@@ -251,6 +259,6 @@ linkage$latinNameJoin[linkage$region == "Other regions" &
 
 
 # Output ----
-
-write.table(linkage, paste0(path, "EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC.csv"), 
+path<-"Nuno"
+write.table(linkage, paste0(path, "EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC_out2.csv"), 
           row.names = F, sep = ";")
