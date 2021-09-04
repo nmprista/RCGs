@@ -7,19 +7,19 @@
 ################################################################################
 # Remember to run "02_table_1a_linkage_table_correcting_latinName.R" after this script
 ################################################################################
-
+rm(list=ls())
 library(dplyr)
 library(tidyr)
 # library(stringr)
 library(data.table)
 
-path <- "Q:/mynd/RCM/RCGs/NWPtools/table_2_1/"
+path <- ""
 
 test <- "yes" # Testing for duplicated areas or not
 rfmo_to_test <- c("ICES", "NAFO") # Which RFMO's to include - the script only handles areas from ICES and NAFO
 
 
-linkage <- read.csv(file.path(path, 'EUMAP_Table_2_1_Linkage_EUROSTAT and EC_TAC_version_2021_final.csv'), sep = ";", header = T)
+linkage <- read.csv('EUMAP_Table_2_1_Linkage_EUROSTAT and EC_TAC_version_2021_final.csv', sep = ";", header = T)
 rdb_areas <- arrange(read.csv(paste0(path, "rdb_area_ref.csv"), sep = ";"), x)
 
 names(linkage)
@@ -28,25 +28,24 @@ names(linkage)
 
 unique(linkage$areaBis)
 
-linkage$areaBis <- gsub(" ", "", linkage$areaBis)
+linkage$areaBis <- gsub(" ", "", linkage$areaBis) # 34 records
 
 # Fixing a couple of areaBis errors ----
 
-linkage$areaBis[linkage$latinName == "Merlangius merlangus" & linkage$area == "7a"] <- "27_7_A" # ERROR, coded as 27_6_a
+#linkage$areaBis[linkage$latinName == "Merlangius merlangus" & linkage$area == "7a"] <- "27_7_A" # ERROR, coded as 27_6_a
 linkage$areaBis[linkage$area == "6, 7, 8, 9"] <- "27_6,27_7_A,27_7_B,27_7_C,27_7_E,27_7_F,27_7_G,27_7_H,27_7_J,27_7_K,27_8,27_9" # ERROR duplicated areas
 linkage$areaBis[linkage$area == "5, 14 (demersal) "] <- "27_5,27_14" # ERROR
 
 linkage$areaBis[linkage$area == "SA1-6"] <- "21_1,21_2,21_3,21_4,21_5,21_6" # ERROR, 21_6 coded as 12_6
 linkage$areaBis[linkage$area == "SA1-3"] <- "21_1,21_2,21_3" # ERROR, too many underscores
 
-
 linkage$areaBis[linkage$areaBis == "27_4,27_7_D" &
-                  linkage$latinName == "Squalus acanthias"] <- "27.1,27.2," #Error, North sea part already included, but area 1 and 2 are missing
+                  linkage$latinName == "Squalus acanthias"] <- "27_1,27_2," #Error, North sea part already included, but area 1 and 2 are missing
 
-linkage$areaRDB[linkage$area == "3aN" &
+linkage$areaBis[linkage$area == "3aN" &
                   linkage$latinName == "Gadus morhua"] <- "27_3_A" # ERROR, "-4_AB_NK" included before
 
-linkage$areaRDB[linkage$area == "20-24" &
+linkage$areaBis[linkage$area == "20-24" &
                   linkage$latinName == "Solea solea"] <- "27_3_A,27_3_C_22,27_3_B_23,27_3_D_24"  #Safer to use 27_3_A, before subdivision
 
 # Fixing duplicated regions in areaBis ----
@@ -54,7 +53,7 @@ linkage$areaRDB[linkage$area == "20-24" &
 linkage$areaBis[linkage$area == "3aS" &
                   linkage$latinName == "Pleuronectes platessa"] <- " " # Duplicate - already in the Baltic Sea
 
-linkage$areaRDB[linkage$area == "Union waters of 2a, 3a and 4" &
+linkage$areaBis[linkage$area == "Union waters of 2a, 3a and 4" &
                   linkage$latinName == "Solea solea"] <- "27_2_A,27_4" # 3a a duplicate - already in the Baltic Sea
 
 # Coding RDB areas ----
@@ -295,7 +294,6 @@ linkage$areaRDB <- gsub("^\\,|\\,$", "", linkage$areaRDB)
 unique(linkage$areaRDB)
 
 # Output
-
-
-write.table(select(linkage, -X, -X.1), paste0(path, "EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC.csv"), 
+path<-"Nuno"
+write.table(select(linkage, -X, -X.1), paste0(path, "EUMAP_Table_2_1_Linkage_EUROSTAT_RDB and EC_TAC_out1.csv"), 
           row.names = F, sep = ";")
